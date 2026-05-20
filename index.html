@@ -254,7 +254,7 @@ function occupied(x,y){return snake.some(s=>s.x===x&&s.y===y)||recruits.some(r=>
 function safePos(){let p,t=0;do{p={x:rnd(COLS),y:rnd(ROWS)};t++;}while(t<200&&(occupied(p.x,p.y)||(Math.abs(p.x-snake[0].x)+Math.abs(p.y-snake[0].y))<4));return p;}
 function numRecruits(){return Math.min(3+level,8);}
 function numBlockers(){return Math.max(0,Math.min(level-1,9));}
-function recruitSpeed(){return Math.max(1,6-Math.floor(level/2));}
+function recruitSpeed(){return Math.max(1,4-Math.floor(level/2));}
 function blockerKind(i){
     const types=darkMode?['google','amazon','war','fired']:['google','amazon'];
     if(level>=5&&darkMode)types.push('victor');
@@ -324,7 +324,7 @@ function update(){
     while(recruits.length<numRecruits())recruits.push({...safePos(),emoji:PEOPLE[rnd(PEOPLE.length)]});
     if(tick%recruitSpeed()===0)moveRecruits();
     particles=particles.filter(p=>{p.x+=p.vx;p.y+=p.vy;p.vx*=0.87;p.vy*=0.87;p.life-=0.055;return p.life>0;});
-    floatingTexts=floatingTexts.filter(t=>{t.y-=1.2;t.life-=0.03;return t.life>0;});
+    floatingTexts=floatingTexts.filter(t=>{t.y-=5;t.life-=0.35;return t.life>0;});
     // Spawn runners in dark mode
     if(darkMode && tick%80===0){
         const fromLeft=Math.random()>0.5;
@@ -453,7 +453,7 @@ function levelUp(){
         'You are on fire 🔥 (the good way :-P)',
         'Screw you Zuck. She keeps going. 😤',
         'Recruiter mode: UNLOCKED. 🔓',
-        'Mark, META\'liach! 😤',
+        'Mark, META\'liach! :)))',
         'Iran won\'t stop me. 🇮🇱',
         'Wars, layoffs, Victor — STILL HERE. 💪',
         'They tried everything. She\'s unstoppable. 🔥'
