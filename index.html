@@ -555,9 +555,10 @@ function endGame(reason){
     const DARK_QUIPS=['Screw you Zuck. She\'ll be back. 😤','Even the servers are crying. 💀','Screw. You. Zuck.'];
     const darkLine=darkMode?`<br><span style="color:#FF6B6B;font-size:1.05rem;opacity:0.95;font-weight:600">${DARK_QUIPS[rnd(DARK_QUIPS.length)]}</span>`:'';
     const subLine=darkMode?darkLine.replace(/^<br>/,''):msg;
-    overlay.innerHTML=`<div style="font-size:1.8rem;margin-bottom:10px">${icon}</div><div class="${titleClass}">${title}</div><p style="font-size:1.05rem">${subLine}<br><br>Level: <strong>${level}</strong> &nbsp;·&nbsp; Hired: <strong style="color:#FFD700;font-size:1.2rem">${score}</strong></p><button id="startBtn">TRY AGAIN</button>`;
+    overlay.innerHTML=`<div style="font-size:1.8rem;margin-bottom:10px">${icon}</div><div class="${titleClass}">${title}</div><p style="font-size:1.05rem">${subLine}<br><br>Level: <strong>${level}</strong> &nbsp;·&nbsp; Hired: <strong style="color:#FFD700;font-size:1.2rem">${score}</strong></p><button id="startBtn">TRY AGAIN</button><button id="shareBtn" style="margin-top:8px;background:rgba(100,100,255,0.8);border:none;color:white;padding:8px 20px;border-radius:20px;cursor:pointer;font-size:0.75rem">SHARE SCORE</button>`;
     overlay.style.display='flex';
     document.getElementById('startBtn').addEventListener('click',()=>{overlay.style.display='none';init(false);draw();startLoop();});
+    document.getElementById('shareBtn').addEventListener('click',()=>{const txt=`I got to Level ${level} and hired ${score} people on META'liach! 🔥 Can you beat me? https://ellafuchs.github.io/meta_game/`;if(navigator.share){navigator.share({text:txt});}else{navigator.clipboard.writeText(txt).then(()=>{document.getElementById('shareBtn').textContent='COPIED!'});}});
 }
 
 function gameSpeed(){return Math.max(70,145-level*12);}
