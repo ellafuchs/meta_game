@@ -171,7 +171,7 @@ const stars=Array.from({length:120},()=>({x:Math.random()*bgC.width,y:Math.rando
 let audioCtx=null, musicOn=false, musicGen=0;
 const NOTES={E2:82.4,F2:87.3,A2:110,C3:130.8,D3:146.8,E3:164.8,F3:174.6,G3:196,A3:220,Bb3:233.1,C4:261.6,D4:293.7,E4:329.6,F4:349.2,G4:392,A4:440,Bb4:466.2,B4:493.9,C5:523.3,D5:587.3,E5:659.3,G5:784,A5:880,F5:698.5};
 const FUN_MELODY=['E5','E5','_','E5','_','C5','E5','_','G5','_','_','_','G4','_','_','_','C5','_','_','G4','_','_','E4','_','_','A4','_','B4','_','A4','_','_','A4','G4','E5','_','G5','A5','_','F5','G5','_','E5','_','C5','D5','B4','_'];
-const DARK_MELODY=['E4','G4','Bb4','E5','G4','Bb4','E4','Bb4','E4','G4','Bb4','E5','Bb4','E5','Bb4','E4','E4','Bb4','E4','Bb4','E4','Bb4','E5','Bb4','G4','E4','G4','Bb4','G4','E4','Bb3','E4','Bb3','E4','Bb3','G3','E3','G3','Bb3','E4','G4','Bb4','E5','Bb4','G4','E4','Bb3','G3'];
+const DARK_MELODY=['E2','_','E2','_','F2','_','E2','_','E3','F3','E3','_','F3','E3','_','_','E2','_','_','E5','_','_','Bb4','_','E2','_','E2','_','F2','E2','_','_','A2','_','Bb3','_','E3','F3','E3','F3','_','E5','_','Bb4','_','E2','_','_','F2','_','E2','_','E3','_','F3','_','Bb3','_','E2','_','_','_','E5','Bb4','E5','_','E2','_','F2','_','E2','_'];
 function freq(n){return NOTES[n]||null;}
 function toggleMusic(){musicOn=!musicOn;document.getElementById('music-btn').textContent='🎵 Music: '+(musicOn?'ON':'OFF');if(!musicOn&&audioCtx)audioCtx.suspend();else if(musicOn&&audioCtx)audioCtx.resume();}
 function initMusic(){
@@ -181,9 +181,9 @@ function initMusic(){
     audioCtx=new(window.AudioContext||window.webkitAudioContext)();
     const masterGain=audioCtx.createGain();masterGain.gain.value=0.12;masterGain.connect(audioCtx.destination);
     const MELODY=darkMode?DARK_MELODY:FUN_MELODY;
-    const tempo=darkMode?60:130;
+    const tempo=darkMode?90:130;
     const wave=darkMode?'sawtooth':'square';
-    const noteLen=darkMode?0.055:0.13;
+    const noteLen=darkMode?0.18:0.13;
     let step=0;
     function playStep(){
         if(gen!==musicGen)return;
@@ -247,6 +247,7 @@ toggle.addEventListener('change',()=>{
 
 let snake,dir,nextDir,recruits,blockers,score,level,levelScore,gameLoop,tick=0,waitingForInput=true,countdown=0;
 let particles=[],catchFlash=[],floatingTexts=[],runners=[];
+let boss=null;
 const rnd=n=>Math.floor(Math.random()*n);
 const rndF=(a,b)=>a+Math.random()*(b-a);
 
@@ -266,9 +267,15 @@ function init(keepLevel){
     levelScore=0;tick=0;particles=[];catchFlash=[];runners=[];floatingTexts=[];catchCount=0;waitingForInput=false;countdown=0;
     snake=[{x:10,y:10},{x:9,y:10},{x:8,y:10}];
     dir={x:1,y:0};nextDir={x:1,y:0};
-    recruits=[];blockers=[];
+    recruits=[];blockers=[];boss=null;
+    const isBossLevel=darkMode&&level===6;
+    if(isBossLevel){
+        boss={px:2*CELL,py:2*CELL,size:2.5};
+    }
+    if(!isBossLevel){
+        for(let i=0;i<numBlockers();i++)blockers.push({...safePos(),kind:blockerKind(i)});
+    }
     for(let i=0;i<numRecruits();i++)recruits.push({...safePos(),emoji:PEOPLE[rnd(PEOPLE.length)]});
-    for(let i=0;i<numBlockers();i++)blockers.push({...safePos(),kind:blockerKind(i)});
     updateHUD();
 }
 
@@ -318,11 +325,25 @@ function update(){
     const hb=blockers.find(b=>b.x===h.x&&b.y===h.y);
     if(hb){endGame(hb.kind);return;}
     snake.unshift(h);
+    if(boss){
+        const bx=Math.round(boss.px/CELL),by=Math.round(boss.py/CELL);
+        const bossR=Math.floor(boss.size);
+        for(let dx=-bossR;dx<=bossR;dx++)for(let dy=-bossR;dy<=bossR;dy++){
+            if(h.x===bx+dx&&h.y===by+dy){endGame('victor');return;}
+        }
+    }
     let ate=false;
     recruits=recruits.filter(r=>{if(r.x===h.x&&r.y===h.y){spawnParticles(r.x,r.y);score++;levelScore++;ate=true;return false;}return true;});
     if(!ate)snake.pop();
     while(recruits.length<numRecruits())recruits.push({...safePos(),emoji:PEOPLE[rnd(PEOPLE.length)]});
     if(tick%recruitSpeed()===0)moveRecruits();
+    if(boss){
+        const tx=snake[0].x*CELL,ty=snake[0].y*CELL;
+        const speed=1.0;
+        const dx=tx-boss.px,dy=ty-boss.py;
+        const dist=Math.sqrt(dx*dx+dy*dy)||1;
+        boss.px+=dx/dist*speed;boss.py+=dy/dist*speed;
+    }
     particles=particles.filter(p=>{p.x+=p.vx;p.y+=p.vy;p.vx*=0.87;p.vy*=0.87;p.life-=0.055;return p.life>0;});
     floatingTexts=floatingTexts.filter(t=>{t.y-=5;t.life-=0.35;return t.life>0;});
     // Spawn runners in dark mode
@@ -404,6 +425,16 @@ function draw(){
         ctx.shadowBlur=0;
     }
 
+    if(boss){
+        const bcx=boss.px+CELL/2,bcy=boss.py+CELL/2;
+        const bSize=CELL*boss.size;
+        const pulse=0.5+0.5*Math.sin(tick*0.15);
+        ctx.shadowColor='rgba(180,0,0,0.8)';
+        ctx.shadowBlur=14+pulse*10;
+        ctx.font=`${bSize}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillText('👹',bcx,bcy+2);
+        ctx.shadowBlur=0;
+    }
     blockers.forEach(b=>{
         const cx=b.x*CELL+CELL/2,cy=b.y*CELL+CELL/2;
         ctx.shadowBlur=10;ctx.shadowColor='rgba(200,100,100,0.5)';
@@ -455,7 +486,7 @@ function levelUp(){
         'Recruiter mode: UNLOCKED. 🔓',
         'Mark, META\'liach! :)))',
         'Iran won\'t stop me. 🇮🇱',
-        'Wars, layoffs, Victor — STILL HERE. 💪',
+        'YOU GO GIRL 💪',
         'They tried everything. She\'s unstoppable. 🔥'
     ];
     const darkWinLine=darkMode?`<br><span style="color:#FF6B6B;font-size:0.82rem">${DARK_WIN[rnd(DARK_WIN.length)]}</span>`:'';
@@ -586,7 +617,10 @@ function showCelebration(then){
 // ── Controls ──────────────────────────────────────────────────────
 const KEYS={ArrowUp:{x:0,y:-1},ArrowDown:{x:0,y:1},ArrowLeft:{x:-1,y:0},ArrowRight:{x:1,y:0},w:{x:0,y:-1},s:{x:0,y:1},a:{x:-1,y:0},d:{x:1,y:0}};
 function startCountdown(){countdown=3;waitingForInput=false;draw();const tick=setInterval(()=>{countdown--;draw();if(countdown<=0){clearInterval(tick);countdown=0;}},700);}
-document.addEventListener('keydown',e=>{const d=KEYS[e.key];if(d&&!(d.x===-dir.x&&d.y===-dir.y)){nextDir=d;if(waitingForInput)startCountdown();e.preventDefault();}});
+document.addEventListener('keydown',e=>{
+    if(e.key>='1'&&e.key<='7'){level=parseInt(e.key);if(level>=5)darkMode=true;score=level*3;overlay.style.display='none';initMusic();init(true);draw();startLoop();e.preventDefault();return;}
+    const d=KEYS[e.key];if(d&&!(d.x===-dir.x&&d.y===-dir.y)){nextDir=d;if(waitingForInput)startCountdown();e.preventDefault();}
+});
 let tx,ty;
 canvas.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY;e.preventDefault();},{passive:false});
 canvas.addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;const d=Math.abs(dx)>Math.abs(dy)?(dx>0?{x:1,y:0}:{x:-1,y:0}):(dy>0?{x:0,y:1}:{x:0,y:-1});if(!(d.x===-dir.x&&d.y===-dir.y)){nextDir=d;if(waitingForInput)startCountdown();}e.preventDefault();},{passive:false});
